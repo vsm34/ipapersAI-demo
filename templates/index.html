@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>iPapers Mini RWF Demo</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+</head>
+<body>
+  <header class="navbar">
+    <div class="nav-left">
+      <span class="logo">iPapers</span>
+      <span class="nav-item">Home</span>
+      <span class="nav-item active">Related Work</span>
+    </div>
+    <div class="nav-right">
+      <span class="nav-item">Demo: Highlights & Notes</span>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <h2>Notes</h2>
+
+      <div class="sidebar-tabs">
+        <button id="tab-highlights" class="tab active">Highlights</button>
+        <button id="tab-add-note" class="tab">Add Note</button>
+      </div>
+
+      <div id="notes-list" class="notes-list"></div>
+
+      <div id="add-note-container" class="add-note-container" style="display:none;">
+        <textarea id="add-note-text" rows="6" placeholder="Type your note here..."></textarea>
+        <div class="add-note-actions">
+          <button id="save-free-note">Save Note</button>
+          <button id="cancel-free-note">Cancel</button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="paper-container">
+      <div id="pdf-container"></div>
+    </main>
+  </div>
+
+  <div id="highlight-popup" class="highlight-popup hidden">
+    <label>
+      Color:
+      <select id="highlight-color">
+        <option value="#fff59d">Yellow</option>
+        <option value="#90caf9">Blue</option>
+        <option value="#a5d6a7">Green</option>
+        <option value="#f48fb1">Pink</option>
+      </select>
+    </label>
+    <label>
+      Note (optional):
+      <textarea id="highlight-note" rows="4"></textarea>
+    </label>
+    <div class="popup-actions">
+      <button id="cancel-highlight">Cancel</button>
+      <button id="save-highlight">Save</button>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>iPapers Mini RWF Demo</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="navbar">
+    <div class="nav-left">
+      <span class="logo">iPapers</span>
+      <span class="nav-item">Home</span>
+      <span class="nav-item active">Related Work</span>
+    </div>
+    <div class="nav-right">
+      <span class="nav-item">Demo: Highlights & Notes</span>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <h2>Notes</h2>
+
+      <div class="sidebar-tabs">
+        <button id="tab-highlights" class="tab active">Highlights</button>
+        <button id="tab-add-note" class="tab">Add Note</button>
+      </div>
+
+      <div id="notes-list" class="notes-list"></div>
+
+      <div id="add-note-container" class="add-note-container" style="display:none;">
+        <textarea id="add-note-text" rows="6" placeholder="Type your note here..."></textarea>
+        <div class="add-note-actions">
+          <button id="save-free-note">Save Note</button>
+          <button id="cancel-free-note">Cancel</button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="paper-container">
+      <h1>Sample Research Paper Title</h1>
+      <p class="meta">Author One, Author Two • Demo Conference 2025</p>
+
+      <div class="pdf-viewer">
+        <embed src="/static/papers/sample.pdf" type="application/pdf" class="pdf-embed" />
+      </div>
+
+      <div id="paper-text" class="paper-text">
+        <section class="paper-page" data-page-number="1">
+          <p>
+            Recent advances in machine learning have produced models that are
+            able to perform complex language understanding tasks at scale. In
+            this work we explore interactive tools for reading and annotating
+            research papers, with an emphasis on workflows that help scholars
+            track related work, surface key claims, and capture questions as
+            structured notes.
+          </p>
+          <p>
+            We present a small demo application that supports inline
+            highlighting, short comments, and a sidebar-driven note list that
+            links back to highlights. Highlights are persisted locally and are
+            associated with the page they appear on so users can contextually
+            navigate longer documents.
+          </p>
+          <p>
+            The interface aims to mirror paper-based workflows: quick
+            highlighters for important statements, color-coding for intent
+            (e.g. question, highlight, idea), and a separate space for longer
+            notes. Notes remain linked to their highlighted text so users can
+            jump back to the exact passage.
+          </p>
+        </section>
+
+        <section class="paper-page" data-page-number="2">
+          <p>
+            Background and related work: there has been a long line of research
+            on digital annotation systems, from early hypertext note-taking to
+            modern collaborative document tools. Prior systems emphasize
+            sharing, versioning, and search — our focus is on tight linking
+            between short notes and highlighted passages for single-user
+            sensemaking workflows.
+          </p>
+          <p>
+            We include sample content on this second page to demonstrate how
+            annotations persist across pages and how the sidebar can be used
+            to navigate long documents. Each highlight stores the page number
+            and a short user note so contextual information is preserved.
+          </p>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div id="highlight-popup" class="highlight-popup hidden">
+    <label>
+      Color:
+      <select id="highlight-color">
+        <option value="#fff59d">Yellow</option>
+        <option value="#90caf9">Blue</option>
+        <option value="#a5d6a7">Green</option>
+        <option value="#f48fb1">Pink</option>
+      </select>
+    </label>
+    <label>
+      Note (optional):
+      <textarea id="highlight-note" rows="4"></textarea>
+    </label>
+    <div class="popup-actions">
+      <button id="cancel-highlight">Cancel</button>
+      <button id="save-highlight">Save</button>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>iPapers Mini RWF Demo</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="navbar">
+    <div class="nav-left">
+      <span class="logo">iPapers</span>
+      <span class="nav-item">Home</span>
+      <span class="nav-item active">Related Work</span>
+    </div>
+    <div class="nav-right">
+      <span class="nav-item">Demo: Highlights & Notes</span>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <h2>Notes</h2>
+
+      <div class="sidebar-tabs">
+        <button id="tab-highlights" class="tab active">Highlights</button>
+        <button id="tab-add-note" class="tab">Add Note</button>
+      </div>
+
+      <div id="notes-list" class="notes-list"></div>
+
+      <div id="add-note-container" class="add-note-container" style="display:none;">
+        <textarea id="add-note-text" rows="6" placeholder="Type your note here..."></textarea>
+        <div class="add-note-actions">
+          <button id="save-free-note">Save Note</button>
+          <button id="cancel-free-note">Cancel</button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="paper-container">
+      <h1>Sample Research Paper Title</h1>
+      <p class="meta">Author One, Author Two • Demo Conference 2025</p>
+
+      <div class="pdf-viewer">
+        <embed src="/static/papers/sample.pdf" type="application/pdf" class="pdf-embed" />
+      </div>
+
+      <div id="paper-text" class="paper-text">
+        <section class="paper-page" data-page-number="1">
+          <p>
+            Recent advances in machine learning have produced models that are
+            able to perform complex language understanding tasks at scale. In
+            this work we explore interactive tools for reading and annotating
+            research papers, with an emphasis on workflows that help scholars
+            track related work, surface key claims, and capture questions as
+            structured notes.
+          </p>
+          <p>
+            We present a small demo application that supports inline
+            highlighting, short comments, and a sidebar-driven note list that
+            links back to highlights. Highlights are persisted locally and are
+            associated with the page they appear on so users can contextually
+            navigate longer documents.
+          </p>
+          <p>
+            The interface aims to mirror paper-based workflows: quick
+            highlighters for important statements, color-coding for intent
+            (e.g. question, highlight, idea), and a separate space for longer
+            notes. Notes remain linked to their highlighted text so users can
+            jump back to the exact passage.
+          </p>
+        </section>
+
+        <section class="paper-page" data-page-number="2">
+          <p>
+            Background and related work: there has been a long line of research
+            on digital annotation systems, from early hypertext note-taking to
+            modern collaborative document tools. Prior systems emphasize
+            sharing, versioning, and search — our focus is on tight linking
+            between short notes and highlighted passages for single-user
+            sensemaking workflows.
+          </p>
+          <p>
+            We include sample content on this second page to demonstrate how
+            annotations persist across pages and how the sidebar can be used
+            to navigate long documents. Each highlight stores the page number
+            and a short user note so contextual information is preserved.
+          </p>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div id="highlight-popup" class="highlight-popup hidden">
+    <label>
+      Color:
+      <select id="highlight-color">
+        <option value="#fff59d">Yellow</option>
+        <option value="#90caf9">Blue</option>
+        <option value="#a5d6a7">Green</option>
+        <option value="#f48fb1">Pink</option>
+      </select>
+    </label>
+    <label>
+      Note (optional):
+      <textarea id="highlight-note" rows="4"></textarea>
+    </label>
+    <div class="popup-actions">
+      <button id="cancel-highlight">Cancel</button>
+      <button id="save-highlight">Save</button>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>iPapers Mini RWF Demo</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="navbar">
+    <div class="nav-left">
+      <span class="logo">iPapers</span>
+      <span class="nav-item">Home</span>
+      <span class="nav-item active">Related Work</span>
+    </div>
+    <div class="nav-right">
+      <span class="nav-item">Demo: Highlights & Notes</span>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <h2>Notes</h2>
+
+      <div class="sidebar-tabs">
+        <button id="tab-highlights" class="tab active">Highlights</button>
+        <button id="tab-add-note" class="tab">Add Note</button>
+      </div>
+
+      <div id="notes-list" class="notes-list"></div>
+
+      <div id="add-note-container" class="add-note-container" style="display:none;">
+        <textarea id="add-note-text" rows="6" placeholder="Type your note here..."></textarea>
+        <div class="add-note-actions">
+          <button id="save-free-note">Save Note</button>
+          <button id="cancel-free-note">Cancel</button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="paper-container">
+      <h1>Sample Research Paper Title</h1>
+      <p class="meta">Author One, Author Two • Demo Conference 2025</p>
+
+      <div class="pdf-viewer">
+        <embed src="/static/papers/sample.pdf" type="application/pdf" class="pdf-embed" />
+      </div>
+
+      <div id="paper-text" class="paper-text">
+        <section class="paper-page" data-page-number="1">
+          <p>
+            Recent advances in machine learning have produced models that are
+            able to perform complex language understanding tasks at scale. In
+            this work we explore interactive tools for reading and annotating
+            research papers, with an emphasis on workflows that help scholars
+            track related work, surface key claims, and capture questions as
+            structured notes.
+          </p>
+          <p>
+            We present a small demo application that supports inline
+            highlighting, short comments, and a sidebar-driven note list that
+            links back to highlights. Highlights are persisted locally and are
+            associated with the page they appear on so users can contextually
+            navigate longer documents.
+          </p>
+          <p>
+            The interface aims to mirror paper-based workflows: quick
+            highlighters for important statements, color-coding for intent
+            (e.g. question, highlight, idea), and a separate space for longer
+            notes. Notes remain linked to their highlighted text so users can
+            jump back to the exact passage.
+          </p>
+        </section>
+
+        <section class="paper-page" data-page-number="2">
+          <p>
+            Background and related work: there has been a long line of research
+            on digital annotation systems, from early hypertext note-taking to
+            modern collaborative document tools. Prior systems emphasize
+            sharing, versioning, and search — our focus is on tight linking
+            between short notes and highlighted passages for single-user
+            sensemaking workflows.
+          </p>
+          <p>
+            We include sample content on this second page to demonstrate how
+            annotations persist across pages and how the sidebar can be used
+            to navigate long documents. Each highlight stores the page number
+            and a short user note so contextual information is preserved.
+          </p>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div id="highlight-popup" class="highlight-popup hidden">
+    <label>
+      Color:
+      <select id="highlight-color">
+        <option value="#fff59d">Yellow</option>
+        <option value="#90caf9">Blue</option>
+        <option value="#a5d6a7">Green</option>
+        <option value="#f48fb1">Pink</option>
+      </select>
+    </label>
+    <label>
+      Note (optional):
+      <textarea id="highlight-note" rows="4"></textarea>
+    </label>
+    <div class="popup-actions">
+      <button id="cancel-highlight">Cancel</button>
+      <button id="save-highlight">Save</button>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>iPapers Mini RWF Demo</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="navbar">
+    <div class="nav-left">
+      <span class="logo">iPapers</span>
+      <span class="nav-item">Home</span>
+      <span class="nav-item active">Related Work</span>
+    </div>
+    <div class="nav-right">
+      <span class="nav-item">Demo: Highlights & Notes</span>
+    </div>
+  </header>
+
+  <div class="layout">
+    
+    <aside class="sidebar">
+      <h2>Notes</h2>
+
+      <div id="notes-list" class="notes-list">
+        
+      </div>
+
+      <h3>New note</h3>
+      <textarea id="free-note-input" placeholder="Type your note here..."></textarea>
+      <button id="add-free-note-btn">Add Note</button>
+    </aside>
+
+    <!-- Paper viewer -->
+    <main class="paper-container">
+      <p class="meta">
+        Author One, Author Two • Demo Conference 2025
+      </p>
+      <div id="paper-text" class="paper-text">
+        <!-- The paper is split into pages. Each page is a <section> with a data-page-number. -->
+        <section class="paper-page" data-page-number="1">
+        
+            Recent advances in machine learning have produced models that are
+            able to perform complex language understanding tasks at scale. In
+            this work we explore interactive tools for reading and annotating
+            research papers, with an emphasis on workflows that help scholars
+            track related work, surface key claims, and capture questions as
+            structured notes.
+          </p>
+          <p>
+            We present a small demo application that supports inline
+            highlighting, short comments, and a sidebar-driven note list that
+            links back to highlights. Highlights are persisted locally and are
+            associated with the page they appear on so users can contextually
+            navigate longer documents.
+          </p>
+          <p>
+            The interface aims to mirror paper-based workflows: quick
+            highlighters for important statements, color-coding for intent
+            (e.g. question, highlight, idea), and a separate space for longer
+            notes. Importantly, notes remain linked to their highlighted text
+            so users can jump back to the exact passage.
+          </p>
+        </section>
+
+        <section class="paper-page" data-page-number="2">
+          <p>
+            Background and related work: there has been a long line of research
+            on digital annotation systems, from early hypertext note-taking to
+            modern collaborative document tools. Prior systems emphasize
+            sharing, versioning, and search — our focus is on tight linking
+            between short notes and highlighted passages for single-user
+            sensemaking workflows.
+          </p>
+          <p>
+            We include sample content on this second page to demonstrate how
+            annotations persist across pages and how the sidebar can be used
+            to navigate long documents. Each highlight stores the page number
+            and a short user note so contextual information is preserved.
+          </p>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Highlight popup -->
+  <div id="highlight-popup" class="highlight-popup hidden">
+    <label>
+      Color:
+      <select id="highlight-color">
+        <option value="#fff59d">Yellow</option>
+        <option value="#90caf9">Blue</option>
+        <option value="#a5d6a7">Green</option>
+        <option value="#f48fb1">Pink</option>
+      </select>
+    </label>
+    <label>
+      Note (optional):
+      <textarea id="highlight-note" rows="3"></textarea>
+    </label>
+    <div class="popup-actions">
+      <button id="cancel-highlight">Cancel</button>
+      <button id="save-highlight">Save</button>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+# ----------------------------
+# Python
+# ----------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.sqlite3
+*.db
+
+# Virtual environment
+.venv/
+venv/
+env/
+ENV/
+
+# Uvicorn / FastAPI artifacts
+*.log
+
+# ----------------------------
+# OS / Editor / Tooling
+# ----------------------------
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# VS Code / Cursor
+.vscode/
+.history/
+.idea/
+
+# Python environment files
+*.egg-info/
+*.egg
+.eggs/
+
+# ----------------------------
+# PDF.js build artifacts
+# ----------------------------
+static/pdfjs/build/
+static/pdfjs/dist/
+static/pdfjs/.cache/
+
+# ----------------------------
+# Node tooling (if added later)
+# ----------------------------
+node_modules/
+npm-debug.log*
+
+# ----------------------------
+# Project Files
+# ----------------------------
+# Ignore local PDFs if you do not want to version large papers.
+# Comment out this line if you DO want PDFs in Git.
+static/papers/*.pdf
+
+# Ignore generated highlight snapshots or temp files
+*.tmp
+*.bak
+*.swp
+
+# ----------------------------
+# Local browser storage exports (if any)
+# ----------------------------
+localStorage.json
+sessionStorage.json
