@@ -43,6 +43,34 @@
     </main>
   </div>
 
+  <!-- Highlight + note popup (used by app.js) -->
+  <div id="highlight-popup" class="highlight-popup hidden">
+    <label>
+      Color:
+      <select id="highlight-color">
+        <option value="#fff59d">Yellow</option>
+        <option value="#bbdefb">Blue</option>
+        <option value="#ffcdd2">Red</option>
+        <option value="#c8e6c9">Green</option>
+      </select>
+    </label>
+
+    <label>
+      Note (optional):
+      <textarea id="highlight-note" rows="3" placeholder="Add a short note about this highlight..."></textarea>
+    </label>
+
+    <label>
+      Page (optional override):
+      <input id="highlight-page" type="number" min="1" placeholder="Auto-detected usually" />
+    </label>
+
+    <div class="popup-actions">
+      <button id="cancel-highlight" type="button">Cancel</button>
+      <button id="save-highlight" type="button">Save</button>
+    </div>
+  </div>
+
   <!-- Single external dependency: pdf.js UMD build (defines window.pdfjsLib) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 
