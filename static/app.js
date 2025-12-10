@@ -1,319 +1,339 @@
-var annotations = []
-var nextNoteId = 1
-var currentSelection = null
+// static/app.js
+// Minimal, integration-friendly demo:
+// - render static/sample.pdf
+// - inline text selection -> highlight popup -> sidebar notes
 
-var pdfContainer = document.getElementById('pdf-container')
-var popup = document.getElementById("highlight-popup")
-var colorSelect = document.getElementById("highlight-color")
-var noteTextarea = document.getElementById("highlight-note")
-var cancelBtn = document.getElementById("cancel-highlight")
-var saveBtn = document.getElementById("save-highlight")
-var notesList = document.getElementById("notes-list")
-var sidebar = document.querySelector('.sidebar')
-var tabHighlights = document.getElementById('tab-highlights')
-var tabAddNote = document.getElementById('tab-add-note')
-var addNoteContainer = document.getElementById('add-note-container')
-var addNoteText = document.getElementById('add-note-text')
-var saveFreeNoteBtn = document.getElementById('save-free-note')
-var cancelFreeNoteBtn = document.getElementById('cancel-free-note')
+console.log("app.js loaded");
 
-// PDF.js setup and rendering
-var pdfUrl = '/static/papers/sample.pdf'
-if (window['pdfjsLib']) {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js'
+// ---- pdf.js setup ---------------------------------------------------------
+
+if (typeof pdfjsLib === "undefined") {
+  console.error("pdfjsLib is not defined. Check the pdf.js <script> tag in index.html.");
+} else {
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
+
+  window.addEventListener("load", () => {
+    console.log("window.load fired");
+    initDemo().catch(err => {
+      console.error("Error in initDemo:", err);
+      const container = document.getElementById("pdf-container");
+      if (container) {
+        container.textContent = "Error initializing PDF demo: " + err.message;
+      }
+    });
+  });
 }
 
-function renderPDF(url) {
-  if (!window['pdfjsLib']) return Promise.reject(new Error('pdfjsLib not found'))
-  return pdfjsLib.getDocument(url).promise.then(function (pdf) {
-    var renderPromises = []
-    for (var p = 1; p <= pdf.numPages; p++) {
-      (function (pageNum) {
-        renderPromises.push(pdf.getPage(pageNum).then(function (page) {
-          var viewport = page.getViewport({ scale: 1.5 })
-          var pageEl = document.createElement('div')
-          pageEl.className = 'pdf-page'
-          pageEl.dataset.pageNumber = String(pageNum)
+// ---- State ----------------------------------------------------------------
 
-          var canvas = document.createElement('canvas')
-          canvas.className = 'pdf-canvas'
-          canvas.width = Math.floor(viewport.width)
-          canvas.height = Math.floor(viewport.height)
-          pageEl.appendChild(canvas)
+let pdfContainer = null;
+let notesList = null;
+let tabHighlights = null;
+let tabAddNote = null;
+let addNoteContainer = null;
+let addNoteText = null;
+let saveFreeNoteBtn = null;
+let cancelFreeNoteBtn = null;
 
-          var textLayer = document.createElement('div')
-          textLayer.className = 'textLayer'
-          pageEl.appendChild(textLayer)
+let popup = null;
+let colorSelect = null;
+let noteTextarea = null;
+let pageInput = null;
+let cancelHighlightBtn = null;
+let saveHighlightBtn = null;
 
-          pdfContainer.appendChild(pageEl)
+let annotations = [];         // list of { id, color, noteText, snippet, pageNumber }
+let currentSelection = null;  // { range, selectedText }
 
-          var renderContext = { canvasContext: canvas.getContext('2d'), viewport: viewport }
-          var renderTask = page.render(renderContext)
+// ---- Init -----------------------------------------------------------------
 
-          return page.getTextContent().then(function (textContent) {
-            // Append simple sequential text spans for selection
-            textContent.items.forEach(function (item) {
-              var span = document.createElement('span')
-              span.className = 'textChunk'
-              span.textContent = item.str
-              textLayer.appendChild(span)
-              // preserve spacing
-              var spacer = document.createTextNode(' ')
-              textLayer.appendChild(spacer)
-            })
-            return renderTask.promise
-          })
-        }))
-      })(p)
-    }
-    return Promise.all(renderPromises)
-  })
+async function initDemo() {
+  grabDomRefs();
+  setupTabs();
+  setupFreeNoteHandlers();
+  setupSelectionHandler();
+  await renderPdf("/static/sample.pdf");
 }
 
-// Start rendering and then load annotations into text layers
-renderPDF(pdfUrl).then(function () { loadAnnotationsFromStorage() }).catch(function (e) { console.warn('Could not render PDF', e) })
+function grabDomRefs() {
+  pdfContainer = document.getElementById("pdf-container");
+  notesList = document.getElementById("notes-list");
+  tabHighlights = document.getElementById("tab-highlights");
+  tabAddNote = document.getElementById("tab-add-note");
+  addNoteContainer = document.getElementById("add-note-container");
+  addNoteText = document.getElementById("add-note-text");
+  saveFreeNoteBtn = document.getElementById("save-free-note");
+  cancelFreeNoteBtn = document.getElementById("cancel-free-note");
 
-function isInsideTextLayer(node) {
-  if (!node) return false
-  if (node.nodeType === Node.TEXT_NODE) node = node.parentNode
-  return node && node.closest && node.closest('.textLayer')
+  popup = document.getElementById("highlight-popup");
+  colorSelect = document.getElementById("highlight-color");
+  noteTextarea = document.getElementById("highlight-note");
+  pageInput = document.getElementById("highlight-page");
+  cancelHighlightBtn = document.getElementById("cancel-highlight");
+  saveHighlightBtn = document.getElementById("save-highlight");
 }
 
-document.addEventListener('mouseup', function (event) {
-  var sel = window.getSelection()
-  if (!sel || sel.isCollapsed) return
-  var range = sel.getRangeAt(0)
-  if (!isInsideTextLayer(range.commonAncestorContainer)) return
-  var noteId = nextNoteId++
-  currentSelection = { range: range.cloneRange(), noteId: noteId }
-  noteTextarea.value = ''
-  var rect = range.getBoundingClientRect()
-  var popupX = rect.left + window.scrollX
-  var popupY = rect.top + window.scrollY - 8
-  showPopupAt(popupX, popupY)
-})
+// ---- PDF rendering --------------------------------------------------------
 
-function showPopupAt(x, y) {
-  popup.style.left = x + 'px'
-  popup.style.top = Math.max(8, y - popup.offsetHeight) + 'px'
-  popup.classList.remove('hidden')
-}
+async function renderPdf(url) {
+  if (!pdfContainer) throw new Error("#pdf-container not found");
+  pdfContainer.innerHTML = "";
 
-function hidePopup() {
-  popup.classList.add('hidden')
-}
+  console.log("Loading PDF:", url);
+  const pdf = await pdfjsLib.getDocument(url).promise;
+  console.log("PDF loaded, pages:", pdf.numPages);
 
-function attachHighlightHandlers(span) {
-  if (!span) return
-  span.style.cursor = 'pointer'
-  span.addEventListener('click', function (e) {
-    e.stopPropagation()
-    var id = span.dataset.noteId
-    if (!id) return
-    if (confirm('Delete this highlight and its note?')) {
-      deleteAnnotationById(Number(id))
-    }
-  })
-}
+  for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+    const page = await pdf.getPage(pageNumber);
 
-document.addEventListener('click', function (e) {
-  var target = e.target
-  if ((pdfContainer && pdfContainer.contains(target)) || popup.contains(target) || sidebar.contains(target)) return
-  currentSelection = null
-  window.getSelection().removeAllRanges()
-  hidePopup()
-})
+    const unscaledViewport = page.getViewport({ scale: 1 });
+    const containerWidth = pdfContainer.clientWidth || 900;
+    const maxWidth = Math.min(containerWidth - 40, 900);
+    const scale = maxWidth / unscaledViewport.width;
+    const viewport = page.getViewport({ scale });
 
-cancelBtn.addEventListener('click', function () {
-  currentSelection = null
-  window.getSelection().removeAllRanges()
-  hidePopup()
-})
+    const pageWrapper = document.createElement("div");
+    pageWrapper.className = "pdf-page";
+    pageWrapper.dataset.pageNumber = String(pageNumber);
 
-saveBtn.addEventListener('click', function () {
-  if (!currentSelection || !currentSelection.range) return
-  var selRange = currentSelection.range
-  if (selRange.collapsed || selRange.toString().trim() === '') return
-  var color = colorSelect.value
-  var noteText = noteTextarea.value.trim()
-  var span = document.createElement('span')
-  span.classList.add('highlighted')
-  span.dataset.noteId = String(currentSelection.noteId)
-  span.style.backgroundColor = color
-  // Try to preserve DOM by extracting the selected fragment into the highlight span
-  try {
-    var frag = selRange.extractContents()
-    span.appendChild(frag)
-    selRange.insertNode(span)
-  } catch (e) {
-    span.textContent = selRange.toString()
-    selRange.deleteContents()
-    selRange.insertNode(span)
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+
+    const textLayerDiv = document.createElement("div");
+    textLayerDiv.className = "textLayer";
+
+    pageWrapper.style.width = viewport.width + "px";
+    pageWrapper.style.height = viewport.height + "px";
+
+    pageWrapper.appendChild(canvas);
+    pageWrapper.appendChild(textLayerDiv);
+    pdfContainer.appendChild(pageWrapper);
+
+    // render page bitmap
+    await page.render({ canvasContext: ctx, viewport }).promise;
+
+    // render invisible text layer for selection
+    const textContent = await page.getTextContent();
+    pdfjsLib.renderTextLayer({
+      textContent,
+      container: textLayerDiv,
+      viewport,
+      textDivs: []
+    });
   }
-  attachHighlightHandlers(span)
-  var pageEl = span.closest('.pdf-page')
-  var pageNumber = pageEl ? Number(pageEl.dataset.pageNumber) : 1
-  var annotation = { id: currentSelection.noteId, color: color, noteText: noteText, highlightedText: span.textContent, pageNumber: pageNumber }
-  annotations.push(annotation)
-  saveAnnotationsToStorage()
-  renderAnnotationItem(annotation)
-  window.getSelection().removeAllRanges()
-  currentSelection = null
-  hidePopup()
-})
+
+  console.log("All pages rendered");
+}
+
+// ---- Tabs & free-form notes -----------------------------------------------
+
+function setupTabs() {
+  if (tabHighlights) {
+    tabHighlights.addEventListener("click", () => {
+      tabHighlights.classList.add("active");
+      if (tabAddNote) tabAddNote.classList.remove("active");
+      if (notesList) notesList.style.display = "block";
+      if (addNoteContainer) addNoteContainer.style.display = "none";
+    });
+  }
+
+  if (tabAddNote) {
+    tabAddNote.addEventListener("click", () => {
+      tabAddNote.classList.add("active");
+      if (tabHighlights) tabHighlights.classList.remove("active");
+      if (notesList) notesList.style.display = "none";
+      if (addNoteContainer) addNoteContainer.style.display = "flex";
+      if (addNoteText) addNoteText.focus();
+    });
+  }
+}
+
+function setupFreeNoteHandlers() {
+  if (saveFreeNoteBtn) {
+    saveFreeNoteBtn.addEventListener("click", () => {
+      const text = (addNoteText?.value || "").trim();
+      if (!text) return;
+      const id = Date.now();
+      const annotation = {
+        id,
+        color: "#eeeeee",
+        noteText: text,
+        snippet: "",
+        pageNumber: null
+      };
+      annotations.push(annotation);
+      renderAnnotationItem(annotation);
+      if (addNoteText) addNoteText.value = "";
+      if (tabHighlights) tabHighlights.click();
+    });
+  }
+
+  if (cancelFreeNoteBtn) {
+    cancelFreeNoteBtn.addEventListener("click", () => {
+      if (addNoteText) addNoteText.value = "";
+      if (tabHighlights) tabHighlights.click();
+    });
+  }
+}
+
+// ---- Selection -> highlight popup ----------------------------------------
+
+function setupSelectionHandler() {
+  if (!cancelHighlightBtn || !saveHighlightBtn) {
+    // popup elements live in HTML; if they're missing, just skip highlighting
+    return;
+  }
+
+  document.addEventListener("mouseup", event => {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed) return;
+
+    const range = selection.getRangeAt(0);
+    if (!pdfContainer || !pdfContainer.contains(range.commonAncestorContainer)) {
+      return;
+    }
+
+    let node = range.commonAncestorContainer;
+    if (node.nodeType === Node.TEXT_NODE) {
+      node = node.parentElement;
+    }
+    if (!node || !node.closest(".textLayer")) return;
+
+    const selectedText = selection.toString().trim();
+    if (!selectedText) return;
+
+    currentSelection = { range: range.cloneRange(), selectedText };
+
+    // reset popup fields
+    if (noteTextarea) noteTextarea.value = "";
+    if (pageInput) pageInput.value = "";
+
+    // position popup
+    if (popup) {
+      popup.style.left = event.clientX + "px";
+      popup.style.top = event.clientY + 8 + "px";
+      popup.classList.remove("hidden");
+    }
+  });
+
+  cancelHighlightBtn.addEventListener("click", () => {
+    hideHighlightPopup();
+  });
+
+  saveHighlightBtn.addEventListener("click", () => {
+    if (!currentSelection || !currentSelection.range) return;
+
+    const range = currentSelection.range;
+    const selectedText = currentSelection.selectedText;
+
+    const color = colorSelect ? colorSelect.value : "#fff59d";
+    const noteText = noteTextarea ? noteTextarea.value.trim() : "";
+    const manualPage =
+      pageInput && pageInput.value ? parseInt(pageInput.value, 10) : null;
+
+    const span = document.createElement("span");
+    span.className = "highlighted";
+    span.textContent = selectedText;
+    span.style.backgroundColor = color;
+
+    range.deleteContents();
+    range.insertNode(span);
+
+    const pageEl = span.closest(".pdf-page");
+    const pageNumber = pageEl
+      ? Number(pageEl.dataset.pageNumber)
+      : manualPage;
+
+    const id = Date.now();
+    span.dataset.noteId = String(id);
+
+    const annotation = {
+      id,
+      color,
+      noteText,
+      snippet: selectedText,
+      pageNumber
+    };
+
+    annotations.push(annotation);
+    renderAnnotationItem(annotation);
+
+    window.getSelection().removeAllRanges();
+    hideHighlightPopup();
+  });
+}
+
+function hideHighlightPopup() {
+  if (popup) popup.classList.add("hidden");
+  currentSelection = null;
+}
+
+// ---- Sidebar notes rendering ----------------------------------------------
 
 function renderAnnotationItem(annotation) {
-  var div = document.createElement('div')
-  div.className = 'note-item'
-  div.dataset.noteId = String(annotation.id)
-  var colorDot = document.createElement('div')
-  colorDot.className = 'note-color'
-  colorDot.style.backgroundColor = annotation.color
-  var content = document.createElement('div')
-  var mainText = (annotation.noteText && annotation.noteText.trim().length) ? annotation.noteText : (annotation.highlightedText || '')
-  var truncated = mainText.length > 140 ? mainText.slice(0, 140) + '...' : mainText
-  content.textContent = truncated
-  var meta = document.createElement('div')
-  meta.style.fontSize = '0.8rem'
-  meta.style.opacity = '0.7'
-  meta.textContent = annotation.pageNumber ? 'p. ' + annotation.pageNumber : ''
-  div.appendChild(colorDot)
-  div.appendChild(content)
-  div.appendChild(meta)
-  // click scrolls to highlight
-  div.addEventListener('click', function () {
-    var id = div.dataset.noteId
-    var target = document.querySelector('span.highlighted[data-note-id="' + id + '"]')
-    if (!target) {
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-      return
-    }
-    target.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    target.classList.add('highlight-focus')
-    setTimeout(function () { target.classList.remove('highlight-focus') }, 1000)
-  })
+  if (!notesList) return;
 
-  // delete button
-  var del = document.createElement('button')
-  del.className = 'note-delete'
-  del.title = 'Delete note'
-  del.textContent = '✕'
-  del.addEventListener('click', function (e) {
-    e.stopPropagation()
-    if (confirm('Delete this note and its highlight?')) {
-      deleteAnnotationById(Number(annotation.id))
-    }
-  })
-  div.appendChild(del)
-  notesList.appendChild(div)
-}
+  const div = document.createElement("div");
+  div.className = "note-item";
+  div.dataset.noteId = String(annotation.id);
 
-function deleteAnnotationById(id) {
-  annotations = annotations.filter(function (a) { return a.id !== id })
-  // remove highlight spans from DOM
-  document.querySelectorAll('span.highlighted[data-note-id="' + id + '"]').forEach(function (el) { el.remove() })
-  // remove sidebar item
-  var item = document.querySelector('.note-item[data-note-id="' + id + '"]')
-  if (item && item.parentNode) item.parentNode.removeChild(item)
-  saveAnnotationsToStorage()
-}
+  const colorDot = document.createElement("div");
+  colorDot.className = "note-color";
+  colorDot.style.backgroundColor = annotation.color;
 
-function renderAllAnnotations() {
-  notesList.innerHTML = ''
-  annotations.forEach(renderAnnotationItem)
-}
+  const contentWrapper = document.createElement("div");
+  contentWrapper.style.flex = "1";
 
-tabHighlights.addEventListener('click', function () { showHighlightsTab() })
-tabAddNote.addEventListener('click', function () { showAddNoteTab() })
+  const primaryLine = document.createElement("div");
+  const baseText =
+    annotation.noteText && annotation.noteText.trim().length
+      ? annotation.noteText.trim()
+      : "Note";
 
-function showHighlightsTab() {
-  tabHighlights.classList.add('active')
-  tabAddNote.classList.remove('active')
-  notesList.style.display = 'block'
-  addNoteContainer.style.display = 'none'
-}
-
-function showAddNoteTab() {
-  tabHighlights.classList.remove('active')
-  tabAddNote.classList.add('active')
-  notesList.style.display = 'none'
-  addNoteContainer.style.display = 'flex'
-  addNoteText.focus()
-}
-
-saveFreeNoteBtn.addEventListener('click', function () {
-  var content = addNoteText.value.trim()
-  if (!content) return
-  var id = Date.now()
-  var annotation = { id: id, color: '#eeeeee', noteText: content, highlightedText: '', pageNumber: null }
-  annotations.push(annotation)
-  saveAnnotationsToStorage()
-  renderAnnotationItem(annotation)
-  addNoteText.value = ''
-  showHighlightsTab()
-})
-
-cancelFreeNoteBtn.addEventListener('click', function () { addNoteText.value = ''; showHighlightsTab() })
-
-function saveAnnotationsToStorage() {
-  try { localStorage.setItem('ipapers-demo-annotations', JSON.stringify(annotations)) } catch (e) { console.warn('Could not save annotations', e) }
-}
-
-function wrapFirstMatchInElement(container, text, noteId, color) {
-  var treeWalker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null)
-  while (treeWalker.nextNode()) {
-    var node = treeWalker.currentNode
-    var idx = node.nodeValue.indexOf(text)
-    if (idx >= 0) {
-      var before = node.nodeValue.slice(0, idx)
-      var match = node.nodeValue.slice(idx, idx + text.length)
-      var after = node.nodeValue.slice(idx + text.length)
-      var parent = node.parentNode
-      if (before) parent.insertBefore(document.createTextNode(before), node)
-      var span = document.createElement('span')
-      span.className = 'highlighted'
-      span.dataset.noteId = String(noteId)
-      span.style.backgroundColor = color
-      span.textContent = match
-      parent.insertBefore(span, node)
-      // attach click-to-delete handler
-      try { attachHighlightHandlers(span) } catch (e) {}
-      if (after) parent.insertBefore(document.createTextNode(after), node)
-      parent.removeChild(node)
-      return true
-    }
+  let display = baseText.length > 30 ? baseText.slice(0, 30) + "..." : baseText;
+  if (annotation.pageNumber) {
+    display += " p. " + annotation.pageNumber;
   }
-  return false
-}
+  primaryLine.textContent = display;
+  primaryLine.style.fontWeight = "500";
 
-function loadAnnotationsFromStorage() {
-  try {
-    var raw = localStorage.getItem('ipapers-demo-annotations')
-    if (!raw) return
-    var parsed = JSON.parse(raw) || []
-    annotations = []
-    parsed.forEach(function (item) {
-      var a = item
-      if (!('noteText' in a) && ('text' in a)) {
-        a = { id: a.id || Date.now(), color: a.color || '#fff59d', noteText: a.text, highlightedText: '', pageNumber: null }
-      }
-      var hasNoteText = a.noteText && a.noteText.toString().trim().length
-      var hasHighlightedText = a.highlightedText && a.highlightedText.toString().trim().length
-      if (!hasNoteText && !hasHighlightedText) return
-      annotations.push(a)
-    })
-    var maxId = annotations.reduce(function (m, a) { return Math.max(m, a.id || 0) }, 0)
-    nextNoteId = Math.max(nextNoteId, maxId + 1)
-    annotations.forEach(function (a) {
-    if (a.highlightedText && a.highlightedText.length) {
-      var pageContainer = null
-      if (a.pageNumber) pageContainer = document.querySelector('.pdf-page[data-page-number="' + a.pageNumber + '"]')
-      if (!pageContainer) pageContainer = document
-      var wrapped = wrapFirstMatchInElement(pageContainer, a.highlightedText, a.id, a.color)
-      if (!wrapped && pageContainer !== document) wrapFirstMatchInElement(document, a.highlightedText, a.id, a.color)
+  let snippetLine = null;
+  if (annotation.snippet && annotation.snippet.trim().length) {
+    const snipText = annotation.snippet.trim();
+    const truncated =
+      snipText.length > 50 ? snipText.slice(0, 50) + "..." : snipText;
+    snippetLine = document.createElement("div");
+    snippetLine.textContent = truncated;
+    snippetLine.style.fontSize = "0.85rem";
+    snippetLine.style.opacity = "0.7";
+    snippetLine.style.marginTop = "0.2rem";
+  }
+
+  contentWrapper.appendChild(primaryLine);
+  if (snippetLine) contentWrapper.appendChild(snippetLine);
+
+  div.appendChild(colorDot);
+  div.appendChild(contentWrapper);
+
+  // click note -> scroll to highlight
+  div.addEventListener("click", () => {
+    const id = div.dataset.noteId;
+    const target = document.querySelector(
+      'span.highlighted[data-note-id="' + id + '"]'
+    );
+    if (!target) return;
+
+    const pageEl = target.closest(".pdf-page");
+    if (pageEl) {
+      pageEl.scrollIntoView({ behavior: "smooth", block: "center" });
     }
-    })
-    renderAllAnnotations()
-  } catch (e) { console.warn('Could not load annotations', e) }
-}
 
+    target.classList.add("highlight-focus");
+    setTimeout(() => target.classList.remove("highlight-focus"), 1000);
+  });
+
+  notesList.appendChild(div);
+}

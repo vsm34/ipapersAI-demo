@@ -55,7 +55,7 @@ npm-debug.log*
 # ----------------------------
 # Ignore local PDFs if you do not want to version large papers.
 # Comment out this line if you DO want PDFs in Git.
-static/papers/*.pdf
+static/*.pdf
 
 # Ignore generated highlight snapshots or temp files
 *.tmp
