@@ -1,6 +1,6 @@
 console.log("app.js loaded");
 
-// Configure pdf.js
+
 if (typeof pdfjsLib !== "undefined") {
   pdfjsLib.GlobalWorkerOptions.workerSrc =
     "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
@@ -72,7 +72,7 @@ function cacheDomElements() {
   saveHighlightBtn = document.getElementById("save-highlight");
 }
 
-// ---- Render the PDF -------------------------------------------------------
+
 
 async function renderAllPages() {
   if (!pdfDoc || !pdfContainer) return;
@@ -117,7 +117,7 @@ async function renderAllPages() {
   console.log("All pages rendered");
 }
 
-// ---- Tabs & free notes ----------------------------------------------------
+
 
 function setupTabs() {
   if (tabHighlights) {
@@ -169,7 +169,7 @@ function setupFreeNoteHandlers() {
   }
 }
 
-// ---- Selection & highlight popup -----------------------------------------
+
 
 function setupSelectionHandler() {
   if (!popup || !cancelHighlightBtn || !saveHighlightBtn) {
@@ -228,7 +228,7 @@ function setupSelectionHandler() {
           touched.push(span);
         }
       } catch (e) {
-        // ignore nodes that can't be checked
+       
       }
     });
 
@@ -239,8 +239,7 @@ function setupSelectionHandler() {
 
     const id = Date.now();
 
-    // Slightly darker translucent highlighter
-    const bgColor = colorWithAlpha(color, 0.75); // slightly darker translucent highlighter
+    const bgColor = colorWithAlpha(color, 0.75); 
     touched.forEach((span) => {
       span.classList.add("highlighted");
       span.style.backgroundColor = bgColor;
@@ -276,22 +275,22 @@ function hideHighlightPopup() {
   currentSelection = null;
 }
 
-// Convert "#rrggbb" / "#rgb" / "rgb(...)" to rgba(..., alpha)
+
 function colorWithAlpha(color, alpha) {
   if (!color) return `rgba(255, 235, 59, ${alpha})`;
 
   const trim = color.trim();
 
-  // already rgba
+  
   if (trim.startsWith("rgba")) return trim;
 
-  // rgb(...) -> rgba(...)
+  
   if (trim.startsWith("rgb")) {
     const inside = trim.slice(trim.indexOf("(") + 1, trim.indexOf(")"));
     return `rgba(${inside}, ${alpha})`;
   }
 
-  // #rrggbb or #rgb
+ 
   if (trim[0] === "#") {
     let r, g, b;
     if (trim.length === 7) {
@@ -308,23 +307,18 @@ function colorWithAlpha(color, alpha) {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   }
 
-  // fallback
+  
   return trim;
 }
 
-// ---- Sidebar notes --------------------------------------------------------
 
-/**
- * Re-render the sidebar notes list, sorted by page number (ascending).
- * Free-form notes without a pageNumber are shown after all page-linked highlights.
- */
 function renderAnnotationsList() {
   if (!notesList) return;
 
-  // Clear current list
+ 
   notesList.innerHTML = "";
 
-  // Sort by pageNumber, then by creation id to keep stable order within a page
+  
   const sorted = [...annotations].sort((a, b) => {
     const pa = a.pageNumber ?? Number.MAX_SAFE_INTEGER;
     const pb = b.pageNumber ?? Number.MAX_SAFE_INTEGER;
@@ -382,7 +376,7 @@ function renderAnnotationItem(annotation) {
   div.appendChild(colorDot);
   div.appendChild(contentWrapper);
 
-  // Click a note -> scroll to its highlight
+  
   div.addEventListener("click", () => {
     const id = div.dataset.noteId;
     const target = pdfContainer.querySelector(
